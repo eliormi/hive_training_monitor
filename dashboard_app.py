@@ -36,7 +36,7 @@ def main():
     st.markdown("---")
 
     # Render Executive View (Refactored to match new style in next steps, currently using existing logic but will profit from CSS)
-    render_executive_view(df_test, df_oll)
+    render_executive_view(df_valid, df_oll)
 
     st.markdown("<br><br>", unsafe_allow_html=True)
 
@@ -85,7 +85,7 @@ def main():
         },
         {
             "title": "3. The Result",
-            "content": "The chart on the left shows the distribution of the <b>filtered validation set</b>. This contains the flights that actually matter for revenue. <br><br><i>Scroll down to see the performance on this high-value subset.</i>"
+            "content": "The chart on the left shows the distribution of the <b>filtered validation set</b>. This contains the flights that actually matter for revenue. <br><br><i>These are the trips driving the metrics shown above.</i>"
         }
     ]
     
@@ -94,9 +94,7 @@ def main():
     
     st.markdown("---")
     
-    st.markdown("### 💎 High Value Performance")
-    # Show the Valid Trip Metrics
-    render_executive_view(df_valid, pd.DataFrame()) # Empty OLL for now
+    # High Value Performance (Removed as redundant - shown in Executive View)
 
     st.markdown("---")
 

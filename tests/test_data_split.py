@@ -1,4 +1,12 @@
 """
+NOTE: This test file is skipped. It was written for DataSplitter (src.data_split),
+which belongs to a separate project and does not exist in hive_training_monitor.
+If DataSplitter is ported into this repo, remove the pytest.skip below.
+"""
+import pytest
+pytest.skip("src.data_split not present in this repo", allow_module_level=True)
+
+"""
 Tests for DataSplitter.split_data_by_time method.
 
 These tests verify:

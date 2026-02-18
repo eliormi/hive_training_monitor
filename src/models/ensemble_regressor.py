@@ -10,9 +10,8 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.neighbors import KNeighborsRegressor
 from catboost import CatBoostRegressor
 
-from darts import TimeSeries
-from darts.models import NaiveMovingAverage
-# You can add more darts models here as needed
+# darts imports are intentionally lazy — import inside methods that use them
+# to avoid pulling in pytorch_lightning at module load time.
 
 class EnsembleRegressor(BaseEstimator, RegressorMixin):
     """
