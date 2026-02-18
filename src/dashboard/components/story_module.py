@@ -1,9 +1,11 @@
+from typing import Any
+
 import streamlit as st
 
 def render_scrollytelling(
-    fig,
-    story_blocks: list
-):
+    fig: Any,
+    story_blocks: list[dict[str, Any]]
+) -> None:
     """
     Renders a scrollytelling section: chart on top, story cards below.
     

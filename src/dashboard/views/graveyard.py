@@ -3,7 +3,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 
-def render_graveyard_view(df_grave, total_trips_count):
+def render_graveyard_view(df_grave: pd.DataFrame, total_trips_count: int) -> None:
     """
     Renders the 'Graveyard' analysis for invalid trips.
     Theme: Ghost Protocol (Monochrome/Red).

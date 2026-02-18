@@ -4,7 +4,7 @@ from src.dashboard.metrics import calculate_global_metrics
 from src.dashboard.data_loader import get_filtered_data
 import pandas as pd
 
-def render_overfitting_view(df_raw):
+def render_overfitting_view(df_raw: pd.DataFrame) -> None:
     
     # Calculate Data
     datasets = ['train', 'val', 'test']

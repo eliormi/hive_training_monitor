@@ -1,8 +1,9 @@
+import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 from src.dashboard.metrics import get_segment_lift
 
-def render_segments_view(df_trips):
+def render_segments_view(df_trips: pd.DataFrame) -> None:
     
     # Control Panel in a Card
     st.markdown('<div class="obsidian-card" style="margin-bottom: 1rem;">', unsafe_allow_html=True)

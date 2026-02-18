@@ -1,8 +1,9 @@
+import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 from src.dashboard.metrics import calculate_global_metrics, calculate_oll_success_rate
 
-def render_executive_view(df_trips, df_oll):
+def render_executive_view(df_trips: pd.DataFrame, df_oll: pd.DataFrame) -> None:
     
     # 1. Calculate Metrics
     # Handle empty frames gracefully

@@ -36,6 +36,7 @@ Run a single test file:
 
 - All new functions must have type hints.
 - Create a `.bak` copy before major file modifications.
+- Adhere to SOLID principles for all class and module designs.
 
 ## Architecture
 
