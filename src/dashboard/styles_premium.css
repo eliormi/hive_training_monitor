@@ -1,0 +1,255 @@
+/* =========================================
+   obsidian-flow-theme v1.0
+   ========================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
+
+:root {
+    /* Color Palette */
+    --bg-deep: #0E1117;
+    --bg-card: #161B22;
+    --bg-card-hover: #1F242D;
+
+    --primary-neon: #00D4FF;
+    --secondary-purple: #7928CA;
+    --success-green: #00CC96;
+    --text-white: #FFFFFF;
+    --text-gray: #A0A5B0;
+
+    /* Effects */
+    --glass-bg: rgba(22, 27, 34, 0.7);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+    --neon-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+
+    /* Typography */
+    --font-heading: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* Base Overrides */
+.stApp {
+    background-color: var(--bg-deep);
+    font-family: var(--font-heading);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-heading);
+    color: var(--text-white) !important;
+    letter-spacing: -0.02em;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+code {
+    font-family: var(--font-mono) !important;
+}
+
+/* =========================================
+   TEXT VISIBILITY & CONTRAST OVERRIDES
+   ========================================= */
+
+/* Streamlit Expander & Tabs */
+.streamlit-expanderHeader,
+.streamlit-expanderHeader p,
+.streamlit-expanderHeader span,
+.streamlit-expanderHeader svg {
+    color: var(--text-white) !important;
+    fill: var(--text-white) !important;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+/* Expander container styling */
+div[data-testid="stExpander"] {
+    background: var(--glass-bg);
+    border: var(--glass-border);
+    border-radius: 12px;
+}
+
+div[data-testid="stExpander"] summary {
+    color: var(--text-white) !important;
+}
+
+div[data-testid="stExpander"] details summary span {
+    color: var(--text-white) !important;
+}
+
+div[data-testid="stTabs"] button {
+    color: var(--text-gray);
+}
+
+div[data-testid="stTabs"] button[aria-selected="true"] {
+    color: var(--primary-neon) !important;
+    border-color: var(--primary-neon) !important;
+}
+
+/* Narrative Text Boost — Force ALL children to be visible */
+.scroll-text-content p,
+.scroll-text-content li,
+.scroll-text-content ul,
+.scroll-text-content ol,
+.scroll-text-content span,
+.scroll-text-content strong,
+.scroll-text-content em,
+.scroll-text-content b,
+.scroll-text-content i {
+    color: #E0E0E0 !important;
+    font-size: 1.05rem;
+    line-height: 1.7;
+}
+
+.scroll-text-content strong {
+    color: #FFFFFF !important;
+    font-weight: 700;
+}
+
+.scroll-text-content h3 {
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+}
+
+/* Dataframes */
+div[data-testid="stDataFrame"] {
+    background: rgba(22, 27, 34, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+}
+
+/* Remove default Streamlit padding for immersive feel */
+.block-container {
+    padding-top: 2rem !important;
+    padding-bottom: 5rem !important;
+    max-width: 95% !important;
+}
+
+/* =========================================
+   COMPONENTS
+   ========================================= */
+
+/* Hero Section Typography */
+.hero-title {
+    font-size: 4rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, #FFFFFF 0%, var(--text-gray) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
+}
+
+.hero-subtitle {
+    font-size: 1.25rem;
+    color: var(--primary-neon);
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 2rem;
+}
+
+/* Obsidian Card (Glassmorphism) */
+.obsidian-card {
+    background: var(--glass-bg);
+    border: var(--glass-border);
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    padding: 24px;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.obsidian-card:hover {
+    background: var(--bg-card-hover);
+    border-color: rgba(0, 212, 255, 0.3);
+    box-shadow: var(--neon-shadow);
+    transform: translateY(-2px);
+}
+
+/* Metric Value Stylization */
+.metric-value {
+    font-family: var(--font-mono);
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-white);
+}
+
+.metric-label {
+    font-size: 0.9rem;
+    color: var(--text-gray);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+}
+
+.metric-delta-pos {
+    color: var(--success-green);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+}
+
+.metric-delta-neg {
+    color: var(--secondary-purple);
+    /* Using purple for "negative" or "attention" instead of red */
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+}
+
+
+/* Scroll Visualization Wrappers */
+.scroll-section {
+    position: relative;
+    padding: 4rem 0;
+}
+
+.sticky-graphic {
+    position: sticky;
+    top: 20%;
+    height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sticky-container {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 150px;
+    /* Adjust based on header height */
+    z-index: 10;
+    transition: all 0.3s ease;
+}
+
+.scroll-text-content {
+    background: rgba(14, 17, 23, 0.95);
+    border: var(--glass-border);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Utility: Gradient Text */
+.text-gradient {
+    background: linear-gradient(135deg, var(--primary-neon) 0%, var(--secondary-purple) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    background: var(--bg-deep);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bg-card);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-neon);
+}

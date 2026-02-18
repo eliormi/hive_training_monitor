@@ -1,0 +1,42 @@
+/* Main Background and Text */
+.stApp {
+    background-color: #0e1117;
+    color: #fafafa;
+}
+
+/* Metric Cards */
+div[data-testid="stMetric"] {
+    background-color: #262730;
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #41424b;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+div[data-testid="stMetricLabel"] {
+    color: #a3a8b4;
+    font-size: 0.9rem !important;
+}
+
+div[data-testid="stMetricValue"] {
+    color: #ffffff;
+    font-size: 1.8rem !important;
+}
+
+div[data-testid="stMetricDelta"] {
+    font-size: 0.9rem !important;
+}
+
+/* Header Styling */
+h1, h2, h3 {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+/* Custom Containers */
+.css-1r6slb0 {
+    background-color: #1a1c24;
+    padding: 20px;
+    border-radius: 15px;
+}
