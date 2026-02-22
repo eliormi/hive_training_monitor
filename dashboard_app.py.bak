@@ -4,7 +4,6 @@ from src.dashboard.data_loader import load_trip_data, load_oll_data, get_filtere
 from src.dashboard.views.executive import render_executive_view
 from src.dashboard.views.overfitting import render_overfitting_view
 from src.dashboard.views.segments import render_segments_view
-from src.dashboard.views.drift import render_drift_view
 
 # Page Config
 st.set_page_config(
@@ -101,23 +100,14 @@ def main():
 
     # --- ACT 3: THE DEEP DIVE (Explorer) ---
     st.markdown("### 🔬 Sector Diagnostics")
-
-    act3_view = st.selectbox(
-        "Analysis View",
-        ["Model Performance", "Drift Monitor"],
-        label_visibility="collapsed",
-    )
-
-    if act3_view == "Model Performance":
-        tab1, tab2 = st.tabs(["Overfitting Analysis", "Segment Breakdown"])
-
-        with tab1:
-            render_overfitting_view(df_trips)
-
-        with tab2:
-            render_segments_view(df_test)
-    else:
-        render_drift_view()
+    
+    tab1, tab2 = st.tabs(["Overfitting Analysis", "Segment Breakdown"])
+    
+    with tab1:
+        render_overfitting_view(df_trips)
+        
+    with tab2:
+        render_segments_view(df_test)
 
     st.markdown("---")
 

@@ -32,6 +32,16 @@ Run a single test file:
 ./.venv/bin/pytest tests/test_data_split.py -v
 ```
 
+Run frontend QA (headless Streamlit AppTest — tests all views, widgets, and view switching):
+```bash
+./.venv/bin/pytest tests/test_frontend.py -v
+```
+
+Run drift detection tests:
+```bash
+./.venv/bin/pytest tests/test_drift_detectors.py tests/test_drift_baseline.py tests/test_drift_runner.py -v
+```
+
 ## Development Rules
 
 - All new functions must have type hints.

@@ -146,12 +146,22 @@ pytest tests/
 # Specific test files
 pytest tests/test_ensemble_regressor.py -v
 pytest tests/test_data_split.py -v
+
+# Frontend QA (headless Streamlit AppTest — all views, widgets, view switching)
+pytest tests/test_frontend.py -v
+
+# Drift detection tests
+pytest tests/test_drift_detectors.py tests/test_drift_baseline.py tests/test_drift_runner.py -v
 ```
 
 | Test File | Covers | Tests |
 |-----------|--------|-------|
+| `test_frontend.py` | Headless dashboard QA: all views, selectbox, radio, expander | 16 |
+| `test_drift_detectors.py` | Drift detection: KS, PSI, chi-square, NaN rate, label drift | 13 |
+| `test_drift_baseline.py` | Baseline save/load, metadata, versioning, backups | 10 |
+| `test_drift_runner.py` | End-to-end drift pipeline, unified verdicts | 6 |
 | `test_ensemble_regressor.py` | EnsembleRegressor fit/predict/weights/TTM | 4 |
-| `test_data_split.py` | DataSplitter temporal splits, CV modes, leakage | 20+ |
+| `test_data_split.py` | DataSplitter temporal splits, CV modes, leakage (skipped) | 20+ |
 | `repro_segment_analysis.py` | SegmentErrorAnalyzer verification script | 1 |
 
 ## Project Structure

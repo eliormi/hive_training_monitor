@@ -1,0 +1,340 @@
+"""Drift Monitor dashboard view: displays drift detection results with Obsidian styling."""
+
+from typing import Dict, List, Tuple
+
+import pandas as pd
+import plotly.graph_objects as go
+import streamlit as st
+
+from src.drift.config import DriftConfig
+from src.drift.detectors import DriftResult
+from src.drift.report import DriftReport
+from src.drift.runner import DriftRunner
+
+
+# -- Color constants (matching Obsidian theme) --
+_CYAN = "#00D4FF"
+_GREEN = "#00CC96"
+_WARNING = "#F5A623"
+_CRITICAL = "#FF453A"
+_TEXT_PRIMARY = "#FFFFFF"
+_TEXT_SECONDARY = "#A0A5B0"
+
+_VERDICT_COLORS: Dict[str, str] = {
+    "HEALTHY": _GREEN,
+    "SEASONAL": _WARNING,
+    "YEAR-SHIFT": "#FF9500",
+    "DRIFT": _CRITICAL,
+}
+
+_STATUS_COLORS: Dict[str, str] = {
+    "HEALTHY": _GREEN,
+    "WARNING": _WARNING,
+    "CRITICAL": _CRITICAL,
+}
+
+
+def _get_or_run_report() -> DriftReport:
+    """Load or compute the drift report, caching in session state."""
+    if "drift_report" not in st.session_state:
+        config = DriftConfig()
+        runner = DriftRunner(config)
+
+        full_df = runner.load_data()
+        train_df = runner.get_train_partition(full_df)
+
+        # Create baselines if they don't exist
+        if not runner.baseline_manager.has_baseline("last_train"):
+            runner.create_baseline(df=full_df, label="auto-dashboard", baseline_type="last_train")
+        if not runner.baseline_manager.has_baseline("yearly"):
+            runner.create_baseline(df=full_df, label="auto-dashboard-yearly", baseline_type="yearly")
+
+        test_df = full_df[full_df[config.data_type_column] == "test"].copy()
+        report = runner.run(current_df=test_df)
+        st.session_state["drift_report"] = report
+
+    return st.session_state["drift_report"]
+
+
+def _render_status_badge(status: str) -> None:
+    """Render the overall status badge as a styled HTML card."""
+    color = _STATUS_COLORS.get(status, _TEXT_SECONDARY)
+    icon_map = {"HEALTHY": "&#10003;", "WARNING": "&#9888;", "CRITICAL": "&#10007;"}
+    icon = icon_map.get(status, "")
+    st.markdown(
+        f"""
+        <div class="obsidian-card" style="text-align:center; padding:1.5rem;">
+            <div style="font-size:2.5rem; color:{color}; margin-bottom:0.5rem;">{icon}</div>
+            <div style="font-family:Inter; font-size:0.75rem; color:{_TEXT_SECONDARY};
+                        letter-spacing:0.1em; text-transform:uppercase;">Pipeline Status</div>
+            <div style="font-family:Inter; font-size:1.5rem; font-weight:700;
+                        color:{color}; margin-top:0.25rem;">{status}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _render_summary_cards(summary_stats: Dict[str, int]) -> None:
+    """Render summary count cards for each verdict category."""
+    cols = st.columns(4)
+    for col, (verdict, count) in zip(cols, summary_stats.items()):
+        color = _VERDICT_COLORS.get(verdict, _TEXT_SECONDARY)
+        col.markdown(
+            f"""
+            <div class="obsidian-card" style="text-align:center; padding:1rem;">
+                <div style="font-family:Inter; font-size:0.7rem; color:{_TEXT_SECONDARY};
+                            letter-spacing:0.08em; text-transform:uppercase;">{verdict}</div>
+                <div style="font-family:Inter; font-size:1.8rem; font-weight:700;
+                            color:{color}; margin-top:0.25rem;">{count}</div>
+                <div style="font-family:Inter; font-size:0.65rem; color:{_TEXT_SECONDARY};">features</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+def _build_results_lookup(results: List[DriftResult]) -> Dict[str, DriftResult]:
+    """Build a feature -> DriftResult lookup from the results list.
+
+    If multiple results exist for the same feature, the highest-severity one wins.
+    """
+    severity_rank = {"CRITICAL": 2, "WARNING": 1, "HEALTHY": 0}
+    lookup: Dict[str, DriftResult] = {}
+    for r in results:
+        existing = lookup.get(r.feature)
+        if existing is None or severity_rank.get(r.severity, 0) > severity_rank.get(existing.severity, 0):
+            lookup[r.feature] = r
+    return lookup
+
+
+def _render_drift_table(report: DriftReport) -> None:
+    """Render the per-feature drift results table with color coding."""
+    all_results = report.results_vs_train + report.results_vs_yearly
+    lookup = _build_results_lookup(all_results)
+
+    rows: List[Dict] = []
+    for feature, verdict in sorted(report.unified_verdicts.items()):
+        result = lookup.get(feature)
+        psi = result.detail.get("psi", "-") if result else "-"
+        rows.append({
+            "Feature": feature,
+            "Drift Type": result.drift_type.replace("_", " ").title() if result else "-",
+            "Test": result.test_name if result else "-",
+            "Statistic": f"{result.statistic:.4f}" if result else "-",
+            "p-value": f"{result.p_value:.4f}" if result and result.p_value > 0 else "-",
+            "PSI": f"{psi:.4f}" if isinstance(psi, (int, float)) else str(psi),
+            "Verdict": verdict,
+        })
+
+    if not rows:
+        st.info("No drift results available. Run the drift pipeline first.")
+        return
+
+    # Build HTML table
+    header = """
+    <div class="obsidian-card" style="overflow-x:auto; padding:0.5rem;">
+    <table style="width:100%; border-collapse:collapse; font-family:Inter; font-size:0.8rem;">
+    <thead>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.15);">
+            <th style="text-align:left; padding:0.6rem; color:{sec};">Feature</th>
+            <th style="text-align:left; padding:0.6rem; color:{sec};">Drift Type</th>
+            <th style="text-align:left; padding:0.6rem; color:{sec};">Test</th>
+            <th style="text-align:right; padding:0.6rem; color:{sec};">Statistic</th>
+            <th style="text-align:right; padding:0.6rem; color:{sec};">p-value</th>
+            <th style="text-align:right; padding:0.6rem; color:{sec};">PSI</th>
+            <th style="text-align:center; padding:0.6rem; color:{sec};">Verdict</th>
+        </tr>
+    </thead>
+    <tbody>
+    """.format(sec=_TEXT_SECONDARY)
+
+    body_rows = ""
+    for row in rows:
+        verdict = row["Verdict"]
+        color = _VERDICT_COLORS.get(verdict, _TEXT_SECONDARY)
+        row_bg = "rgba(255,255,255,0.02)" if rows.index(row) % 2 == 0 else "transparent"
+        body_rows += f"""
+        <tr style="background:{row_bg}; border-bottom:1px solid rgba(255,255,255,0.05);">
+            <td style="padding:0.5rem; color:{_TEXT_PRIMARY}; font-family:'JetBrains Mono',monospace;
+                       font-size:0.75rem;">{row['Feature']}</td>
+            <td style="padding:0.5rem; color:{_TEXT_SECONDARY};">{row['Drift Type']}</td>
+            <td style="padding:0.5rem; color:{_TEXT_SECONDARY};">{row['Test']}</td>
+            <td style="padding:0.5rem; text-align:right; color:{_TEXT_PRIMARY};">{row['Statistic']}</td>
+            <td style="padding:0.5rem; text-align:right; color:{_TEXT_PRIMARY};">{row['p-value']}</td>
+            <td style="padding:0.5rem; text-align:right; color:{_TEXT_PRIMARY};">{row['PSI']}</td>
+            <td style="padding:0.5rem; text-align:center;">
+                <span style="background:{color}22; color:{color}; padding:0.2rem 0.6rem;
+                             border-radius:4px; font-weight:600; font-size:0.7rem;">{verdict}</span>
+            </td>
+        </tr>
+        """
+
+    footer = "</tbody></table></div>"
+    st.markdown(header + body_rows + footer, unsafe_allow_html=True)
+
+
+def _render_psi_chart(report: DriftReport) -> None:
+    """Render a horizontal bar chart of PSI values per feature."""
+    all_results = report.results_vs_train + report.results_vs_yearly
+    lookup = _build_results_lookup(all_results)
+
+    features: List[str] = []
+    psi_values: List[float] = []
+    colors: List[str] = []
+
+    for feature, verdict in sorted(report.unified_verdicts.items()):
+        result = lookup.get(feature)
+        if result is None:
+            continue
+        psi = result.detail.get("psi")
+        if psi is None or not isinstance(psi, (int, float)):
+            continue
+        features.append(feature)
+        psi_values.append(psi)
+        colors.append(_VERDICT_COLORS.get(verdict, _TEXT_SECONDARY))
+
+    if not features:
+        return
+
+    # Sort by PSI descending
+    sorted_data = sorted(zip(psi_values, features, colors), reverse=True)
+    psi_values, features, colors = zip(*sorted_data)  # type: ignore[assignment]
+
+    fig = go.Figure(
+        data=[
+            go.Bar(
+                y=list(features),
+                x=list(psi_values),
+                orientation="h",
+                marker_color=list(colors),
+                text=[f"{v:.3f}" for v in psi_values],
+                textposition="auto",
+                textfont=dict(color=_TEXT_PRIMARY, size=10),
+            )
+        ]
+    )
+
+    fig.add_vline(x=0.1, line_dash="dash", line_color=_WARNING, annotation_text="Warning",
+                  annotation_position="top right", annotation_font_color=_WARNING)
+    fig.add_vline(x=0.2, line_dash="dash", line_color=_CRITICAL, annotation_text="Critical",
+                  annotation_position="top right", annotation_font_color=_CRITICAL)
+
+    fig.update_layout(
+        template="plotly_dark",
+        title=dict(
+            text="PSI BY FEATURE",
+            font=dict(family="Inter", size=14, color=_TEXT_PRIMARY),
+            x=0,
+        ),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        height=max(350, len(features) * 28),
+        margin=dict(l=20, r=20, t=40, b=20),
+        xaxis=dict(
+            showgrid=True,
+            gridcolor="rgba(255,255,255,0.1)",
+            zeroline=True,
+            zerolinecolor="rgba(255,255,255,0.2)",
+            tickfont=dict(color="#E0E0E0"),
+            title=dict(text="PSI", font=dict(color=_TEXT_SECONDARY, size=11)),
+        ),
+        yaxis=dict(
+            tickfont=dict(color=_TEXT_PRIMARY, family="JetBrains Mono", size=10),
+            dtick=1,
+        ),
+    )
+
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+
+def _render_actions(report: DriftReport) -> None:
+    """Render the recommended actions section."""
+    if not report.actions:
+        st.markdown(
+            f"""
+            <div class="obsidian-card" style="padding:1rem; border-left:3px solid {_GREEN};">
+                <div style="font-family:Inter; color:{_GREEN}; font-weight:600;">
+                    All Clear</div>
+                <div style="font-family:Inter; color:{_TEXT_SECONDARY}; font-size:0.85rem; margin-top:0.25rem;">
+                    No action items. All monitored features are within acceptable thresholds.</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        return
+
+    st.markdown(
+        f'<div style="font-family:Inter; font-size:0.75rem; color:{_TEXT_SECONDARY}; '
+        f'letter-spacing:0.1em; text-transform:uppercase; margin-bottom:0.75rem;">'
+        f"RECOMMENDED ACTIONS</div>",
+        unsafe_allow_html=True,
+    )
+
+    for action in report.actions:
+        sev_color = _STATUS_COLORS.get(action.severity, _TEXT_SECONDARY)
+        features_str = ", ".join(action.affected_features[:5])
+        if len(action.affected_features) > 5:
+            features_str += f" (+{len(action.affected_features) - 5} more)"
+
+        st.markdown(
+            f"""
+            <div class="obsidian-card" style="padding:0.75rem; margin-bottom:0.5rem;
+                        border-left:3px solid {sev_color};">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <span style="font-family:Inter; font-size:0.7rem; font-weight:600;
+                                     color:{sev_color}; background:{sev_color}22;
+                                     padding:0.15rem 0.4rem; border-radius:3px;">
+                            {action.severity}</span>
+                        <span style="font-family:Inter; font-size:0.85rem; color:{_TEXT_PRIMARY};
+                                     margin-left:0.5rem;">{action.action}</span>
+                    </div>
+                    <span style="font-family:Inter; font-size:0.7rem; color:{_TEXT_SECONDARY};">
+                        Owner: {action.owner}</span>
+                </div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:0.7rem;
+                            color:{_TEXT_SECONDARY}; margin-top:0.35rem;">
+                    Affected: {features_str}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+def render_drift_view() -> None:
+    """Main entry point for the Drift Monitor dashboard view."""
+    st.markdown(
+        f"""
+        <div style="font-family:Inter; font-size:0.75rem; color:{_TEXT_SECONDARY};
+                    letter-spacing:0.1em; text-transform:uppercase; margin-bottom:1rem;">
+            DRIFT MONITOR</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    with st.spinner("Running drift detection..."):
+        report = _get_or_run_report()
+
+    # Row 1: Status badge + summary cards
+    col_status, col_cards = st.columns([1, 3])
+    with col_status:
+        _render_status_badge(report.overall_status)
+    with col_cards:
+        _render_summary_cards(report.summary_stats)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Row 2: Per-feature results table
+    _render_drift_table(report)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Row 3: PSI chart in an expander
+    with st.expander("PSI Distribution Chart", expanded=True):
+        _render_psi_chart(report)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Row 4: Action recommendations
+    _render_actions(report)
